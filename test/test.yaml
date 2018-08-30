@@ -1,0 +1,14 @@
+version: '3.1'
+
+services:
+
+  nexus:
+    image: robobeerun/nexus3:latest
+    ports:
+      - "8081:8081"
+    environment:
+      DEBUG: "true"
+      INSTALL4J_ADD_VM_PARAMS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+    volumes:
+      - "./root/nexus-data:/nexus-data"
+      - "./root/sonatype-work:/opt/sonatype/sonatype-work"

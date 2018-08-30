@@ -1,0 +1,140 @@
+* !https://project.anrisoftware.com/projects/attachments/download/217/apache2.0-small.gif! (© 2016 Erwin Müller)
+
+<pre>
+git@gitea.anrisoftware.com:robobeerun/docker-make-utils.git
+git@github.com:devent/docker-make-utils.git
+</pre>
+
+h1. Docker Make Utils
+
+This project contains scripts for Docker image creation and Docker container creation. Those scripts are intended to be imported by a @Makefile@ script file.
+
+h2. Usage
+
+Checkout the @docker-make-utils@ as a submodule in your Git project and import the needed utility @Makefile@ into your own @Makefile@ as shown in the example below.
+
+<pre>
+include docker_make_utils/Makefile.help
+include docker_make_utils/Makefile.functions
+include docker_make_utils/Makefile.container
+</pre>
+
+h2. Makefile.help
+
+Provides the @help@ target to your @Makefile@.
+
+h2. Makefile.functions
+
+Provides various functions to your @Makefile@.
+
+* @check_defined@, will check if a variable was set, as in the example:
+
+<pre>
+$(call check_defined, DB_USER DB_PASSWORD, Database user credentials)
+</pre>
+
+h2. Makefile.image
+
+Provides targets to build and to deploy a Docker image. The user is expected to provide the @Dockerfile@ and to set image related variables.
+
+h3. Variables
+
+|_.Variable|_.Default|_.Description|
+| @NAME@ | | The image name. |
+| @VERSION@ | | The image version. |
+| @REPOSITORY@ | | The docker hub repository. |
+| @DOCKER_HUB_USER@ | | The docker hub repository user name. |
+| @DOCKER_HUB_PASSWORD@ | | The docker hub repository user password. |
+| @APT_CACHE@ | | Optionally, the URL of the apt-cacher. |
+
+h3. Example Image Makefile
+
+<pre>
+REPOSITORY := erwin
+NAME := mysql
+VERSION ?= 5.7-build_010
+
+.PHONY: build
+build: _build ##@targets Builds the docker image.
+
+.PHONY: clean
+clean: _clean ##@targets Removes the local docker image.
+
+.PHONY: deploy
+deploy: _deploy ##@targets Deploys the docker image to the repository.
+
+include docker-make-utils/Makefile.help
+include docker-make-utils/Makefile.functions
+include docker-make-utils/Makefile.image
+</pre>
+
+h2. Makefile.container
+
+Provides targets to run a Docker container. The user is expected to provide the Docker command to run the container and to set container related variables. It also provides targets to build a data container to persist data by using the Convoy Docker module. Furthermore, it provides targets to create a local user for the Docker container.
+
+h3. Variables
+
+|_.Variable|_.Default|_.Description|
+| @NAME@ | | Container name. |
+| @DOCKER_CMD@ | | Docker command to create the container. |
+| @IMAGE@ | | Image name. |
+| @DATA_NAME@ | | Data container name. |
+| @DATA_DOCKER_CMD@ | | Docker command to create the data container. |
+| @DOCKER_RUN@ | | Docker command to start the container. |
+
+h3. Examples
+
+* Simple container makefile with a local user for the data.
+
+<pre>
+VERSION := latest
+NAME := phpmyadmin
+CONF := .
+CONTAINER_USER ?= www-data
+DNS_SERVER ?= 172.17.0.3
+
+include docker_make_utils/Makefile.help
+include docker_make_utils/Makefile.functions
+include docker_make_utils/Makefile.container
+
+define DOCKER_CMD :=
+docker run \
+--name $(NAME) \
+--dns=$(DNS_SERVER) \
+-v "`realpath $(CONF)/config.inc.php`:/usr/src/phpMyAdmin/config.inc.php.custom" \
+-e PHPMYADMIN_USER_ID=`id -u $(CONTAINER_USER)` \
+-e PHPMYADMIN_GROUP_ID=`id -g $(CONTAINER_USER)` \
+-d \
+erwinnttdata/phpmyadmin:$(VERSION)
+endef
+
+.PHONY +: run rerun rm clean test restart bash
+
+run: _localuser _run backend ##@default Starts the container.
+
+rerun: rm run ##@targets Stops, removes and re-starts the container.
+
+stop: backend-stop _stop ##@targets Stops the container.
+
+rm: _rm backend-rm ##@targets Stops and removes the container.
+
+clean: _clean backend-clean ##@targets Stops and removes the container and removes all created files.
+
+test: backend-test _test ##@targets Tests if the container is running.
+
+restart: _restart backend-restart ##@targets Restarts the container.
+
+bash: test _bash ##@targets Executes the bash inside the running container.
+</pre>
+
+h2. License
+
+This image is licensed under the "MIT":https://opensource.org/licenses/MIT license.
+
+Copyright 2017 Erwin Müller, erwin@muellerpublic.de
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

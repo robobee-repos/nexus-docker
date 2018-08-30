@@ -1,0 +1,81 @@
+# Shell of the Makefile goals.
+SHELL := /bin/bash
+
+# Default goal.
+.DEFAULT_GOAL := run
+
+# Container name.
+#NAME :=
+
+# Docker command to create the container.
+#DOCKER_CMD :=
+
+# Image name.
+IMAGE := $(IMAGE_NAME):$(VERSION)
+
+# Data container name.
+DATA_NAME := $(NAME)-data
+
+# Docker command to create the data container.
+#DATA_DOCKER_CMD :=
+
+# Docker command to start the container.
+DOCKER_RUN ?= docker start $(NAME)
+
+.PHONY: _run
+_run:
+	set -x && \
+	if ! $(container_exists); then \
+	$(DOCKER_CMD) ;\
+	elif ! $(container_running); then \
+	$(DOCKER_RUN) ;\
+	fi
+
+.PHONY: _rerun
+_rerun: rm run
+
+.PHONY: _rm
+_rm:
+	set -x && \
+	if $(container_exists); then \
+	docker rm -f $(NAME) ;\
+	fi
+
+.PHONY: _stop
+_stop:
+	if $(container_exists); then \
+	docker stop $(NAME); \
+	fi
+
+.PHONY: _clean
+_clean: rm
+
+.PHONY: _test
+_test:
+	[ -n "`$(container_exists)`" ]
+
+.PHONY: _restart
+_restart: test
+	docker restart $(NAME)
+
+.PHONY: _bash
+_bash:
+	docker exec -it $(NAME) bash
+
+.PHONY: container-ip
+container-ip:
+	docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(NAME)
+
+.PHONY: _data-run
+_data-run:
+	set -x && \
+	if ! $(data_container_exists); then \
+	$(DATA_DOCKER_CMD) ;\
+	fi
+
+.PHONY: _data-rm
+_data-rm:
+	set -x && \
+	if $(data_container_exists); then \
+	docker rm -f $(DATA_NAME) ;\
+	fi
