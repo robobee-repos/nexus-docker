@@ -1,6 +1,6 @@
 REPOSITORY := robobeerun
 NAME := nexus3
-VERSION ?= v3.13.0-r.3
+VERSION ?= v3.13.0-r.1
 
 .PHONY: build
 build: _build ##@targets Builds the docker image.
